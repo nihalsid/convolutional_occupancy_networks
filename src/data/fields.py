@@ -166,16 +166,14 @@ class VoxelsField(Field):
     def load(self, model_path, idx, category):
         ''' Loads the data point.
 
-        Args:
+        Args:r
             model_path (str): path to model
             idx (int): ID of data point
             category (int): index of category
         '''
         file_path = os.path.join(model_path, self.file_name)
-
-        with open(file_path, 'rb') as f:
-            voxels = binvox_rw.read_as_3d_array(f)
-        voxels = voxels.data.astype(np.float32)
+        voxels = np.load(file_path)
+        voxels = voxels["geometry"].astype(np.float32)
 
         if self.transform is not None:
             voxels = self.transform(voxels)

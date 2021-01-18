@@ -27,13 +27,13 @@ class LocalVoxelEncoder(nn.Module):
     '''
 
     def __init__(self, dim=3, c_dim=128, unet=False, unet_kwargs=None, unet3d=False, unet3d_kwargs=None, 
-                 plane_resolution=512, grid_resolution=None, plane_type='xz', kernel_size=3, padding=0.1):
+                 plane_resolution=512, grid_resolution=None, plane_type='xz', kernel_size=3, padding=0.1, input_nc=1):
         super().__init__()
         self.actvn = F.relu
         if kernel_size == 1:
-            self.conv_in = nn.Conv3d(1, c_dim, 1)
+            self.conv_in = nn.Conv3d(input_nc, c_dim, 1)
         else:
-            self.conv_in = nn.Conv3d(1, c_dim, kernel_size, padding=1)
+            self.conv_in = nn.Conv3d(input_nc, c_dim, kernel_size, padding=1)
 
         if unet:
             self.unet = UNet(c_dim, in_channels=c_dim, **unet_kwargs)
