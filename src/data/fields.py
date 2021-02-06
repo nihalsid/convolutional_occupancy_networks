@@ -139,7 +139,6 @@ class PointsField(Field):
         if self.unpackbits:
             occupancies = np.unpackbits(occupancies)[:points.shape[0]]
         occupancies = occupancies.astype(np.float32)
-
         data = {
             None: points,
             'occ': occupancies,

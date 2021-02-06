@@ -45,6 +45,7 @@ else:
     raise ValueError('model_selection_mode must be '
                      'either maximize or minimize.')
 
+
 # Output directory
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
@@ -54,6 +55,11 @@ shutil.copyfile(args.config, os.path.join(out_dir, 'config.yaml'))
 # Dataset
 train_dataset = config.get_dataset('train', cfg)
 val_dataset = config.get_dataset('val', cfg, return_idx=True)
+
+# Model
+model = config.get_model(cfg, device=device, dataset=train_dataset)
+
+print(model, f"[{sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6}]")
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=batch_size, num_workers=cfg['training']['n_workers'], shuffle=True,
@@ -90,9 +96,6 @@ for i in range(len(vis_loader)):
         data_vis_list.append({'category': category_name, 'it': c_it, 'data': data_vis})
 
     model_counter[category_id] += 1
-
-# Model
-model = config.get_model(cfg, device=device, dataset=train_dataset)
 
 # Generator
 generator = config.get_generator(model, cfg, device=device)
