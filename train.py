@@ -59,7 +59,7 @@ val_dataset = config.get_dataset('val', cfg, return_idx=True)
 # Model
 model = config.get_model(cfg, device=device, dataset=train_dataset)
 
-print(model, f"[{sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6}]")
+# print(model, f"[{sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6}]")
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=batch_size, num_workers=cfg['training']['n_workers'], shuffle=True,

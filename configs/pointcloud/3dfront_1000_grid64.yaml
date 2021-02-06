@@ -1,0 +1,55 @@
+method: conv_onet
+data:
+  input_type: pointcloud
+  classes: null
+  path: data/3dfront
+  pointcloud_n: 1000
+  pointcloud_noise: 0.005
+  points_subsample: 2048
+  points_file: points_iou.npz
+  points_iou_file: points_iou.npz
+  pointcloud_file: pointcloud.npz
+  pointcloud_chamfer_file: pointcloud.npz
+  voxels_file: null
+  points_unpackbits: false
+model:
+  encoder: pointnet_local_pool
+  encoder_kwargs:
+    hidden_dim: 32
+    plane_type: 'grid'
+    grid_resolution: 64
+    unet3d: True
+    unet3d_kwargs:
+      num_levels: 4
+      f_maps: 24
+      in_channels: 32
+      out_channels: 32
+  decoder: simple_local
+  decoder_kwargs:
+    sample_mode: bilinear # bilinear / nearest
+    hidden_size: 32
+  c_dim: 32
+training:
+  out_dir: out/pointcloud/3dfront_1000_64
+  batch_size: 6
+  model_selection_metric: iou
+  model_selection_mode: maximize
+  print_every: 100
+  visualize_every: 10000
+  validate_every: 10000
+  checkpoint_every: 2000
+  backup_every: 10000
+  n_workers: 8
+  n_workers_val: 4
+test:
+  threshold: 0.2
+  eval_mesh: true
+  eval_pointcloud: false
+  remove_wall: true
+  model_file: model_best.pt
+generation:
+  generation_dir: generation_new
+  vis_n_outputs: 10
+  refine: false
+  n_x: 128
+  n_z: 1

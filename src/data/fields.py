@@ -221,6 +221,7 @@ class PatchPointCloudField(Field):
 
         pointcloud_dict = np.load(file_path)
 
+
         points = pointcloud_dict['points'].astype(np.float32)
         normals = pointcloud_dict['normals'].astype(np.float32)
 
@@ -294,9 +295,10 @@ class PointCloudField(Field):
             file_path = os.path.join(model_path, self.file_name, '%s_%02d.npz' % (self.file_name, num))
 
         pointcloud_dict = np.load(file_path)
-
-        points = pointcloud_dict['points'].astype(np.float32)
-        normals = pointcloud_dict['normals'].astype(np.float32)
+        points = pointcloud_dict['arr_0'].astype(np.float32) / 64 - 0.5
+        normals = np.zeros_like(points)
+        # points = pointcloud_dict['points'].astype(np.float32)
+        # normals = pointcloud_dict['normals'].astype(np.float32)
         
         data = {
             None: points,
