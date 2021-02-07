@@ -4,8 +4,9 @@ import marching_cubes as mc
 import numpy as np
 import torch
 from tqdm import tqdm
+import traceback
 import trimesh
-
+import os
 
 def visualize_point_list(grid, colors, output_path):
     f = open(output_path, "w")
@@ -94,6 +95,33 @@ def create_data_point_for_sdf(base_path, dataset_name, sample_name, output_folde
         np.savez_compressed((output_folder / sample_name / "tsdf.npz"), geometry=in_sdf)    
 
 
+def create_uniform_samples_for_sdf(base_path, dataset_name, sample_name, output_folder):
+    voxel_size_hr = 0.054167
+    dim = 64
+    n_points_uniform = 100000
+    n_files = 10
+    padding = 0.1
+    points_uniform = np.random.rand(n_points_uniform * n_files, 3).astype(np.float32)
+    points_uniform = (points_uniform - 0.5) * (1 + padding)
+    occupancies = np.zeros(n_points_uniform * n_files).astype(bool)
+
+    tgt_sdf = np.load(Path(base_path, "sdf_064", dataset_name, sample_name + ".npy"))
+    points_grid = ((points_uniform + 0.5) * dim).astype(np.uint32)
+    points_grid_inside = ((points_grid >=0) & (points_grid < dim)).all(axis=1)
+    occupancies[points_grid_inside] = tgt_sdf[points_grid[points_grid_inside, 0], points_grid[points_grid_inside, 1], points_grid[points_grid_inside, 2]] <= 0.75 * voxel_size_hr
+    # visualize_point_list(points_uniform[occupancies==True, :], None, f"dump/{sample_name}_occ.obj")
+    # visualize_point_list(points_uniform, None, f"dump/{sample_name}_samples.obj")
+    points_uniform = points_uniform.reshape(n_files, n_points_uniform, 3)
+    occupancies = occupancies.reshape(n_files, n_points_uniform)
+    points_uniform = points_uniform.astype(np.float16)
+    for file_idx in range(n_files):
+        out_dict = {
+            'points': points_uniform[file_idx],
+            'occupancies': occupancies[file_idx],
+        }
+        np.savez(os.path.join(output_folder, sample_name, 'points_uniform_%02d.npz' % file_idx), **out_dict)
+    
+
 def create_dataset(base_path, dataset_name, output_folder, proc, num_proc):
     list_of_samples = [x.name.split('.')[0] for x in (Path(base_path) / "sdf_064" / dataset_name).iterdir()]
     list_of_samples = [x for i, x in enumerate(list_of_samples) if i % num_proc == proc]
@@ -102,6 +130,18 @@ def create_dataset(base_path, dataset_name, output_folder, proc, num_proc):
             create_data_point_for_sdf(Path(base_path), dataset_name, p, Path(output_folder))
         except Exception as e:
             print("DataprocessingError: ", p, e)
+
+
+def create_uniform_dataset(base_path, dataset_name, output_folder, proc, num_proc):
+    # list_of_samples = [x.name.split('.')[0] for x in (Path(base_path) / "sdf_064" / dataset_name).iterdir()]
+    list_of_samples = list(set(Path(output_folder, "train.lst").read_text().splitlines() + Path(output_folder, "val.lst").read_text().splitlines()))
+    list_of_samples = [x for i, x in enumerate(list_of_samples) if i % num_proc == proc]
+    for p in tqdm(list_of_samples):
+        try:
+            create_uniform_samples_for_sdf(Path(base_path), dataset_name, p, Path(output_folder))
+        except Exception as e:
+            print("DataprocessingError: ", p, e)
+            print(traceback.format_exc())
 
 
 if __name__ == "__main__":
@@ -115,4 +155,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    create_dataset("/rhome/ysiddiqui/repatch/data", "3DFront", args.outputdir, args.proc, args.num_proc)
+    create_uniform_dataset("/rhome/ysiddiqui/repatch/data", "3DFront", args.outputdir, args.proc, args.num_proc)
